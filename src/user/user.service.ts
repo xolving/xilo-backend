@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
-import { SignupDto } from './dto/signup.dto';
+import { SignupDto } from '../auth/dto/signup.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -11,7 +12,7 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  public async createUser(signupDto: SignupDto) {
-    await this.userRepository.save(signupDto);
+  public async getUserList(){
+    return await this.userRepository.find();
   }
 }
