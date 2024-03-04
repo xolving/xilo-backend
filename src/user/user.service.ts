@@ -1,9 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
-import { SignupDto } from '../auth/dto/signup.dto';
-import * as bcrypt from 'bcrypt';
+import { isEmail } from 'class-validator';
 
 @Injectable()
 export class UserService {
@@ -12,7 +11,9 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  public async getUserList(){
-    return await this.userRepository.find();
+  public async findByUsernameOrEmail(key: string){
+    return await this.userRepository.findOneBy(
+      isEmail(key) ? {"email": key} : {"username": key}
+    )
   }
 }

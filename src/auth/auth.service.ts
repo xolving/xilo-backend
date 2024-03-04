@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { SignupDto } from './dto/signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/user.entity';
@@ -6,12 +6,14 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { SigninDto } from './dto/signin.dto';
 import { isEmail } from 'class-validator';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User)
-        private userRepository: Repository<User>
+        private userRepository: Repository<User>,
+        private jwtService: JwtService
     ){}
 
     public async signup(signupDto: SignupDto){
@@ -25,16 +27,18 @@ export class AuthService {
     }
 
     public async signin(signinDto: SigninDto){
-        const validEmail = isEmail(signinDto.key)
+        const validEmail = isEmail(signinDto.usernameOrEmail)
         const user = await this.userRepository.findOneBy(validEmail ? 
-        {email: signinDto.key} : {username: signinDto.key})
+        {email: signinDto.usernameOrEmail} : {username: signinDto.usernameOrEmail})
+
+        if(!user) throw new HttpException('Not found user', HttpStatus.NOT_FOUND)
 
         if(!bcrypt.compare(signinDto.password, user.password)){
             throw new UnauthorizedException()
         }
 
-        // TODO JWT
+        const payload = { sub: user.id }
 
-        return user.email;
+        return {"Access-Token": await this.jwtService.signAsync(payload, {secret: process.env.JWT_SECRET})}
     }
 }
